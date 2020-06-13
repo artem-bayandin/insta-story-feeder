@@ -1,35 +1,102 @@
-/**
- * (c) Facebook, Inc. and its affiliates. Confidential and proprietary.
- */
+const Diagnostics = require('Diagnostics')
+const Patches = require('Patches')
+const Reactive = require('Reactive')
+const Scene = require('Scene')
 
-//==============================================================================
-// Welcome to scripting in Spark AR Studio! Helpful links:
-//
-// Scripting Basics - https://fb.me/spark-scripting-basics
-// Reactive Programming - https://fb.me/spark-reactive-programming
-// Scripting Object Reference - https://fb.me/spark-scripting-reference
-// Changelogs - https://fb.me/spark-changelog
-//
-// For projects created with v87 onwards, JavaScript is always executed in strict mode.
-//==============================================================================
 
-// How to load in modules
-const Scene = require('Scene');
 
-// Use export keyword to make a symbol available in scripting debug console
-export const Diagnostics = require('Diagnostics');
+const log = (message) => Diagnostics.log(message)
 
-// To use variables and functions across files, use export/import keyword
-// export const animationDuration = 10;
+const findMe = (identifier) => Scene.root.findFirst(identifier, null)
 
-// Use import keyword to import a symbol from another file
-// import { animationDuration } from './script.js'
+const subscribeToPatchPulse = (identifier, func) => {
+    return Patches.outputs.getPulse(identifier).then(pulse => pulse.subscribe(func))
+}
 
-// To access scene objects
-// const directionalLight = Scene.root.find('directionalLight0');
+const subscribeToPatchScalar = (identifier, func) => {
+    return Patches.outputs.getScalar(identifier).then(scalarSignal => scalarSignal.monitor({fireOnInitialValue: true}).subscribe(func))
+}
 
-// To access class properties
-// const directionalLightIntensity = directionalLight.intensity;
+const sendBooleanToPatch = (identifier, value) => Patches.inputs.setBoolean(identifier, !!value)
 
-// To log messages to the console
-// Diagnostics.log('Console message logged from the script.');
+const sendScalarToPatch = (identifier, value) => Patches.inputs.setScalar(identifier, +value)
+
+const sendPulseToPatch = (identifier) => Patches.inputs.setPulse(identifier, Reactive.once())
+
+
+
+// common properties
+const initialSpeed = 100
+const maxSpeed = 30
+
+let playing = false
+let speedMultiplier = 0
+let speedStep = 9
+let level = 0
+let currentItemValue = 0
+let itemsCount = 0
+let score = 0
+
+
+
+const sendDoPlay = (value) => sendBooleanToPatch('doPlay', !!value)
+const sendResetAnimation = () => sendPulseToPatch('resetAnimation')
+const sendMultiplier = (value) => sendScalarToPatch('speedMultiplier', +value)
+const sendLevelUp = () => sendPulseToPatch('levelUp')
+
+const setMultiplier = (value) => {
+    speedMultiplier = value
+    sendMultiplier(value)
+}
+
+const setScore = (value) => {
+    score = value
+    findMe('txt-score').then(obj => obj.text = score.toString())
+}
+
+const increaseItemsCount = () => {
+    itemsCount++
+    if (itemsCount % 4 === 0) {
+        log(`level up`)
+        level++
+        setMultiplier(speedMultiplier - speedStep)
+        sendLevelUp()
+    }
+}
+
+subscribeToPatchPulse('tapped', () => {
+    log(`tapped`)
+    if (!playing) {
+        sendResetAnimation()
+        setMultiplier(initialSpeed)
+        playing = true
+        level = 0
+        itemsCount = 0
+        setScore(0)
+        sendDoPlay(true)
+    }
+})
+
+subscribeToPatchPulse('droppedGood', () => {
+    log(`good drop, value: ${currentItemValue}`)
+    setScore(score + currentItemValue)
+    increaseItemsCount()
+})
+
+subscribeToPatchPulse('droppedBad', () => {
+    log(`bad drop, value: ${currentItemValue}`)
+    sendDoPlay(false)
+    playing = false
+    sendResetAnimation()
+    setMultiplier(initialSpeed)
+})
+
+subscribeToPatchScalar('currentItemValue', (options) => {
+    log(`new value: ${currentItemValue}`)
+    currentItemValue = options.newValue
+})
+
+// init
+sendDoPlay(false)
+sendResetAnimation()
+sendMultiplier(initialSpeed)
