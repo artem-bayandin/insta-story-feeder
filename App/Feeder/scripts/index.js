@@ -2,10 +2,13 @@ const Diagnostics = require('Diagnostics')
 const Patches = require('Patches')
 const Reactive = require('Reactive')
 const Scene = require('Scene')
+const Time = require('Time')
 
 
 
 const log = (message) => Diagnostics.log(message)
+
+const setTimeout = (func, timeout) => Time.setTimeout(func, timeout)
 
 const findMe = (identifier) => Scene.root.findFirst(identifier, null)
 
@@ -43,6 +46,9 @@ const sendDoPlay = (value) => sendBooleanToPatch('doPlay', !!value)
 const sendResetAnimation = () => sendPulseToPatch('resetAnimation')
 const sendMultiplier = (value) => sendScalarToPatch('speedMultiplier', +value)
 const sendLevelUp = () => sendPulseToPatch('levelUp')
+const setScoreText = (txt) => findMe('txt-score').then(obj => obj.text = txt.toString())
+const setScoreAddedText = (txt) => findMe('txt-score-added').then(obj => obj.text = `+${txt}`)
+const clearScoreAddedText = () => findMe('txt-score-added').then(obj => obj.text = '')
 
 const setMultiplier = (value) => {
     speedMultiplier = value
@@ -51,7 +57,7 @@ const setMultiplier = (value) => {
 
 const setScore = (value) => {
     score = value
-    findMe('txt-score').then(obj => obj.text = score.toString())
+    setScoreText(score.toString())
 }
 
 const increaseItemsCount = () => {
@@ -80,6 +86,10 @@ subscribeToPatchPulse('tapped', () => {
 subscribeToPatchPulse('droppedGood', () => {
     log(`good drop, value: ${currentItemValue}`)
     setScore(score + currentItemValue)
+    if (currentItemValue > 0) {
+        setScoreAddedText(currentItemValue)
+        setTimeout(() => { clearScoreAddedText() }, 1500)
+    }
     increaseItemsCount()
 })
 
