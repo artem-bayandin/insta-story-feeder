@@ -63,7 +63,7 @@ const setScore = (value) => {
 const increaseItemsCount = () => {
     itemsCount++
     if (itemsCount % 4 === 0) {
-        log(`level up`)
+        // log(`level up`)
         level++
         setMultiplier(speedMultiplier - speedStep)
         sendLevelUp()
@@ -71,7 +71,7 @@ const increaseItemsCount = () => {
 }
 
 subscribeToPatchPulse('tapped', () => {
-    log(`tapped`)
+    // log(`tapped`)
     if (!playing) {
         sendResetAnimation()
         setMultiplier(initialSpeed)
@@ -84,7 +84,7 @@ subscribeToPatchPulse('tapped', () => {
 })
 
 subscribeToPatchPulse('droppedGood', () => {
-    log(`good drop, value: ${currentItemValue}`)
+    // log(`good drop, value: ${currentItemValue}`)
     setScore(score + currentItemValue)
     if (currentItemValue > 0) {
         setScoreAddedText(currentItemValue)
@@ -94,7 +94,7 @@ subscribeToPatchPulse('droppedGood', () => {
 })
 
 subscribeToPatchPulse('droppedBad', () => {
-    log(`bad drop, value: ${currentItemValue}`)
+    // log(`bad drop, value: ${currentItemValue}`)
     sendDoPlay(false)
     playing = false
     sendResetAnimation()
@@ -102,7 +102,7 @@ subscribeToPatchPulse('droppedBad', () => {
 })
 
 subscribeToPatchScalar('currentItemValue', (options) => {
-    log(`new value: ${currentItemValue}`)
+    // log(`new value: ${currentItemValue}`)
     currentItemValue = options.newValue
 })
 
