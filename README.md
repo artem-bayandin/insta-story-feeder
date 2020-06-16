@@ -24,4 +24,4 @@ c.
 
 ## [Time Logs]
 
-### Total time spent: 9h
+### Total time spent: 10.5h (June 6, 2020)
